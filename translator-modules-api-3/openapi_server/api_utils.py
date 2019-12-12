@@ -2,6 +2,8 @@ import cwlgen
 from glob import glob
 from pprint import pprint
 import os
+import json
+import subprocess
 
 TYPES = ["gene", "chemical_substance", "disease", "anatomical_entity", "phenotypic_feature", "cell_line"]
 WORKFLOWS = ["wf2", "wf9"]  # how can I generate this dynamically?
@@ -46,25 +48,33 @@ implementations_dir = translator_modules_dir + "ncats/translator/modules/"
 def find_or_make_input():
     pass
 
-def handle_run_workflow(payload):
+def handle_run_workflow(full_task_payload):
 
-    name = payload.workflow_name
-    input = payload.inputs
+    """
+    Failure cases:
+    - Syntactic
+        =>
+    - Semantic
+        =>
+    """
+    name = full_task_payload.workflow_name
+    input_name = full_task_payload.input_mappings
 
-    locate_implementation_result = locate_implementation(name)
-    locate_workflows_result = locate_workflows(name)
-    inputs = find_or_make_input(input)
-    #locate_inputs_result1 = locate_inputs(input_identifier)
+    workflow = os.path.abspath(locate_workflows(name)[0])
+    implementation = os.path.abspath(locate_implementation(name)[0])
+    inputs = os.path.abspath(locate_inputs(input_name)[0])
+    attachments = ",".join([implementation, workflow, inputs])
+    wes_client_process_request = "wes-client --host={} --proto={} --attachments={} --run {} {}" \
+        .format(service["host"], service["proto"], attachments, workflow, inputs)
 
-    attachments = ",".join([locate_implementation_result[0],
-                            locate_workflows_result[0],
-                            inputs[0]])
-    diy_command_string = "wes-client --host={} --proto={} --attachments={} --run {} {}"\
-        .format(service["host"], service["proto"], attachments, locate_workflows_result[0], inputs[0])
+    result = subprocess.check_output(wes_client_process_request, shell=True)
+    result_json = json.loads(result)
+    result_dict = dict(result_json)
 
-    os.system(diy_command_string)
+    return result_dict
 
-    return str(payload)
+def handle_info_workflow(workflow_name):
+    pass
 
 def translate_payload(payload):
     """
