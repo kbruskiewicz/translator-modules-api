@@ -1,0 +1,74 @@
+openapi: 3.0.0
+servers:
+  - description: NCATS Workflow Runner
+    url: http://0.0.0.0:8090
+info:
+  title: NCATS Workflow Runner
+  description: executes and creates multi-step, multi-input, scatterable workflows that chain together scripts from Translator Modules
+  version: "0.0.1"
+  contact:
+    email: kenneth@starinformatics.com
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+tags:
+  - name: admins
+    description: Secured Admin-only calls to configure resolution service
+  - name: public
+    description: >
+      Operations available for getting info on, and running workflows or workflow steps
+paths:
+  /run/workflow/:
+    post:
+      tags:
+        - public
+      summary: runs a workflow and returns its results (TODO or delays them?) based off a (TODO given sequence of) workflow names and their (TODO scatterable) inputs
+      operationId: run_workflow_by_payload
+      description: >-
+        The request here requires /full specification/, meaning that the user posts both a workflow to execute and all of the input that's needed.
+      responses:
+        '200':
+          description: >-
+            The resopnse from the workflow runner (which if valid/200, are the location of the results or us returning the results)
+          content:
+            application/json:
+              schema:
+                title: WorkflowResults
+                $ref: '#/components/schemas/WorkflowResults'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              x-body-name: payload
+              title: FullTaskPayload
+              $ref: '#/components/schemas/FullTaskPayload'
+components:
+  schemas:
+    TaskId:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+    FullTaskPayload:
+      type: object
+      required:
+        - workflow_name
+        - input_mappings
+      properties:
+        workflow_name:
+          type: string
+          description: >-
+            A symbol corresponding to the workflow specification and module script
+        input_mappings:
+          type: string
+    WorkflowResults:
+      type: object
+      required:
+        - task_id
+        - results_path
+      properties:
+        task_id:
+          type: string
+        results_path:
+          type: string

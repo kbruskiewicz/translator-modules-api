@@ -1,0 +1,10 @@
+{
+    "disease_list": {
+        "location": "file:///Users/kenneth/git/translator-modules-api/workflows/46989861752d43708dee0066995f69b9/outdir/disease_associated_genes.records.json",
+        "basename": "disease_associated_genes.records.json",
+        "class": "File",
+        "checksum": "sha1$eaa1086aa296e369355577f7ecb06497001ac40e",
+        "size": 6488,
+        "path": "/Users/kenneth/git/translator-modules-api/workflows/46989861752d43708dee0066995f69b9/outdir/disease_associated_genes.records.json"
+    }
+}

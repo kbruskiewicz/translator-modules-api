@@ -1,0 +1,6 @@
+* Checklist
+** Run Docker Compose in Translator Modules root
+** Run Wes-Server in Translator Modules API root
+** RUn Wes-Client in Translator Modules API root
+*** Maybe through scratch.py
+*** Maybe eventually just through WES Client and REST API
