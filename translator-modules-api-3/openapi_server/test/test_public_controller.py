@@ -11,6 +11,7 @@ from openapi_server.models.workflow_results import WorkflowResults  # noqa: E501
 from openapi_server.test import BaseTestCase
 
 
+
 class TestPublicController(BaseTestCase):
     """PublicController integration test stubs"""
 
@@ -20,9 +21,9 @@ class TestPublicController(BaseTestCase):
         runs a workflow and returns its results (TODO or delays them?) based off a (TODO given sequence of) workflow names and their (TODO scatterable) inputs
         """
         full_task_payload = {
-  "workflow_name" : "workflow_name",
-  "input_mappings" : "input_mappings"
-}
+          "workflow_name" : "workflow_name",
+          "input_mappings" : "input_mappings"
+        }
         headers = { 
             'Accept': 'application/json',
             'Content-Type': 'application/json',
