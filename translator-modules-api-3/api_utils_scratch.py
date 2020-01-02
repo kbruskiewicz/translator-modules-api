@@ -4,14 +4,12 @@ import cwlgen
 from glob import glob
 from pprint import pprint
 
-
 import json
 import yaml
 import uuid
 
 import os
 import subprocess
-
 
 DEBUG = True
 
@@ -47,6 +45,7 @@ inputs_dir = translator_modules_dir + "cwl/data/"
 workflows_dir = translator_modules_dir + "cwl/workflows/"
 implementations_dir = translator_modules_dir + "ncats/translator/modules/"
 
+
 def find_or_make_input():
     """
     in: string OR array OR object
@@ -54,13 +53,14 @@ def find_or_make_input():
     """
     pass
 
+
 def make_input(raw_inputs, format="yaml"):
     """
     in: list of key-value pairs
     out: json file or yaml file, and file location
     """
 
-    file_name = uuid.uuid4()+"."+format
+    file_name = uuid.uuid4() + "." + format
     data = None
     if type(raw_inputs) is list:
         """
@@ -78,28 +78,21 @@ def make_input(raw_inputs, format="yaml"):
     file_location = inputs_dir + file_name
     with open(file_location, "x+") as inputs_file:
 
-        assert(type(data) is dict)
+        assert (type(data) is dict)
 
         if format is "yaml":
             yaml.dump(data, inputs_file)
-            assert(yaml.safe_load(inputs_file) == data)
+            assert (yaml.safe_load(inputs_file) == data)
         elif format is "json":
             json.dump(data, inputs_file)
-            assert(json.load(inputs_file) == data)
+            assert (json.load(inputs_file) == data)
 
         return inputs_file, file_location
 
-def validate_input():
-    # TODO: validation criterion for inputs?
-    """
-    Semantic Validity
-    Syntactic Validity
-    Structural Valdity
-    Schema Consistency
 
-    cf correspondence with James Eddy on Sun, Jun 30, 2019, 11:13 PM via GMail
-    """
+def validate_input():
     pass
+
 
 def validate_input_against_schema(worklow_cwl_inst):
     """
@@ -113,8 +106,8 @@ def validate_input_against_schema(worklow_cwl_inst):
     """
     pass
 
-def handle_run_workflow(full_task_payload):
 
+def handle_run_workflow(full_task_payload):
     """
     Failure cases:
     - Syntactic
@@ -125,13 +118,21 @@ def handle_run_workflow(full_task_payload):
     name = full_task_payload.workflow_name
     input_name = full_task_payload.input_mappings
 
-    # TODO: Make asynchronous, robust to exceptions
-        # TODO: PRIORITY: Make robust to exceptions -> lookup the command and see what happens when error when posting stdout?
-    result_dict = start_workflow(name, input_name)
+    workflow = os.path.abspath(locate_workflows(name)[0])
+    implementation = os.path.abspath(locate_implementation(name)[0])
+    inputs = os.path.abspath(locate_inputs(input_name)[0])
+
+    command = make_command(workflow, implementation, inputs)
+    result = subprocess.check_output(command, shell=True)
+    result_json = json.loads(result)
+    result_dict = dict(result_json)
+
     return result_dict
+
 
 def handle_info_workflow(workflow_name):
     pass
+
 
 def translate_payload(payload):
     """
@@ -144,12 +145,15 @@ def translate_payload(payload):
     """
     pass
 
+
 def resolve_resources():
     pass
+
 
 def run_input(payload):
     task_resources = translate_payload(payload)
     pass
+
 
 def run_workflow_int(int, payload):
     """
@@ -167,13 +171,16 @@ def run_workflow_int(int, payload):
     """
     pass
 
+
 def run_workflow_symbol(symbol, payload):
     pass
+
 
 def run_type_type_sub_symbol(inType, outType, symbol, payload):
     # scope is bounded by the API
     # Modify payload to be complete
     pass
+
 
 def locate_implementation(name, input_type="*", output_type="*", predicate=None):
     if input_type is locate_implementation.__defaults__[0]:
@@ -192,16 +199,22 @@ def locate_workflows(name, composite="*"):
 
     return glob(workflows_dir + composite + "/" + name + ".cwl")
 
+
 def locate_inputs(identifier, format="yaml"):
     return glob(inputs_dir + identifier + "." + format)
 
+
 from functools import reduce
+
+
 def make_command(workflow, implementation, inputs):
     attachments_list = list(map(os.path.abspath, reduce(list.__add__, [implementation, workflow, inputs])))
     attachments_str = ",".join(attachments_list)
     wes_client_process_request = "wes-client --host={} --proto={} --attachments={} --run {} {}" \
-        .format(service["host"], service["proto"], attachments_str, os.path.abspath(workflow[0]), os.path.abspath(inputs[0]))
+        .format(service["host"], service["proto"], attachments_str, os.path.abspath(workflow[0]),
+                os.path.abspath(inputs[0]))
     return wes_client_process_request
+
 
 def symbols_from_steps_of(workflow_location):
     with open(os.path.abspath(workflow_location[0]), "r") as file:
@@ -213,16 +226,14 @@ def symbols_from_steps_of(workflow_location):
         else:
             return []
 
+
 def start_workflow_step(step_name, input_identifier):
-    workflow_location = locate_workflows(step_name)
+    worklow_location = locate_workflows(step_name)
     implementation_location = locate_implementation(step_name)
     input_location = locate_inputs(input_identifier)
-    command_str = make_command(workflow_location, implementation_location, input_location)
+    command_str = make_command(worklow_location, implementation_location, input_location)
+    os.system(command_str)
 
-    result = subprocess.check_output(command_str, shell=True)
-    result_json = json.loads(result)
-    result_dict = dict(result_json)
-    return result_dict
 
 def start_workflow_composite(name, input_identifier):
     workflow_location = locate_workflows(name)
@@ -249,21 +260,19 @@ def start_workflow_composite(name, input_identifier):
     for symbol in symbols:
         implementation_locations += locate_implementation(symbol)
 
-    command_str = make_command(workflow_locations, implementation_locations, input_location)
+    command_string = make_command(workflow_locations, implementation_locations, input_location)
+    os.system(command_string)
 
-    result = subprocess.check_output(command_str, shell=True)
-    result_json = json.loads(result)
-    result_dict = dict(result_json)
-    return result_dict
 
 def start_workflow(name, input_identifier):
     workflow_location = locate_workflows(name)
     symbols = symbols_from_steps_of(workflow_location)
     if len(symbols) > 0:
         # TODO: optimize the subsequent calls on `symbol`
-        return start_workflow_composite(name, input_identifier)
+        start_workflow_composite(name, input_identifier)
     else:
-        return start_workflow_step(name, input_identifier)
+        start_workflow_step(name, input_identifier)
+
 
 def is_composite_workflow(spec_filename):
     """
@@ -280,23 +289,28 @@ def is_composite_workflow(spec_filename):
     # TODO: could I just check if the key exists or not rather than finding symbols length? would that be faster?
     return len(symbols_from_steps_of(spec_filename)) > 0
 
+
 def test1():
     name = "disease_associated_genes"
     input_name = "disease"
-    pprint(start_workflow_step(name, input_name))
+    start_workflow_step(name, input_name)
+
 
 def test2():
     name = "wf2"
     input_name = "disease"
-    pprint(start_workflow_composite(name, input_name))
+    start_workflow_composite(name, input_name)
+
 
 import cwlgen
 import cwltool
+
 
 def access_cwl(cwl_path):
     assert True  # TODO guarantee it's a CWL file
     with open(cwl_path, "r") as cwl_file:
         return yaml.safe_load(cwl_file)
+
 
 def test3():
     """
@@ -505,6 +519,7 @@ def test3():
 
     # CASE: extracting inputs from a workflow to server as basis for schema check against inputs to be served
 
+
 def test31():
     """
     - Modifying a workflow specification to scatter on inputs
@@ -527,85 +542,6 @@ def test31():
 
     pass
 
-def make_cwl(step_list):
-
-    INPUT_TOKEN = "input_genes"  # how to make this derived?
-    OUTPUT_TYPE = "File"
-
-    # generalize the above logic
-    # we must generalize across all of the step's token names
-    SEQUENTIAL = False
-    PARALLEL = True
-
-    init_step = step_list[0]
-    init_step_name = init_step[0]
-    init_step_cwl = access_cwl(init_step[1])
-
-    gen_dict = {
-        "cwlVersion": "v1.0",
-        "class": "Workflow"
-    }
-    gen_dict["steps"] = {}
-    gen_dict["inputs"] = {}
-    gen_dict["outputs"] = {}
-    i = 0
-    for step in step_list:
-        assert i < len(step_list)
-        step_name = step[0]
-        step_cwl = access_cwl(step[1])
-        for input_key in step_cwl["inputs"].keys():
-            # initialize the step entry with the known values of the step entry if not exists, else return new step entry
-            # (with `in` because we have to handle it in the loop) subsequent initializations will preserve the content of
-            # the previous loop, since after the first `get` the value will already exist (and not
-            # reinitialize to the blank version of the step.) `update` is used a the way of extending this with multiple a
-            gen_dict["steps"][step_name] = gen_dict["steps"].get(step_name, {"in": {}})
-
-            # NOTA BENE: this step, where `in` is defined, is affected by the induction
-            # BASE CASE: steps are equal to itself when tracking the init step
-            # (the init step is the first one in the current step_list)
-            # DISTINCTION: steps are equal to the outputs of previous steps
-            if i <= 0:
-                for input_key in init_step_cwl["inputs"].keys():
-                    gen_dict["steps"][step_name]["in"].update({input_key: input_key})
-                    gen_dict["inputs"][input_key] = {
-                        "type": step_cwl["inputs"][input_key]["type"]
-                    }
-            elif i > 0:
-                if SEQUENTIAL:
-                    assert not PARALLEL
-                    # In the sequential case, equal to the output of the previous case
-                    # TODO: doing a lot of file access here... could insert a form of memoization?
-                    prev_step_cwl = access_cwl(step_list[i - 1][1])
-                    # remember that the assumption here is that all Translator Modules produce a single output
-                    output_key = step_list[i - 1][0] + "/" + list(prev_step_cwl["outputs"].keys())[0]
-                    gen_dict["steps"][step_name]["in"].update({
-                        INPUT_TOKEN: output_key,
-                        "type": OUTPUT_TYPE
-                    })
-                elif PARALLEL:
-                    assert not SEQUENTIAL
-                    # In the parallel case, equal to the output of the initial case
-                    # TODO: doing a lot of file access here... could insert a form of memoization?
-                    prev_step_cwl = access_cwl(step_list[0][1])
-                    # remember that the assumption here is that all Translator Modules produce a single output
-                    output_key = step_list[0][0] + "/" + list(prev_step_cwl["outputs"].keys())[0]
-                    gen_dict["steps"][step_name]["in"].update({
-                        INPUT_TOKEN: output_key,
-                        "type": OUTPUT_TYPE
-                    })
-
-        workflow_return_value_reference_keys = list(step_cwl["outputs"].keys())
-        gen_dict["steps"][step_name]["run"] = step_name + ".cwl"
-        gen_dict["steps"][step_name]["out"] = [workflow_return_value_reference_keys[0]]
-        gen_dict["outputs"].update({
-            workflow_return_value_reference_keys[0]: {
-                "type": "File",
-                "outputSource": step_name + "/" + workflow_return_value_reference_keys[0]
-            }
-        })
-        i += 1
-
-    return gen_dict
 
 def test4():
     """
@@ -682,6 +618,7 @@ def test4():
     """
     pass
 
+
 t = {
     "test1": False,
     "test2": False,
@@ -689,6 +626,7 @@ t = {
     "test31": False,
     "test4": False
 }
+
 
 def tests():
     # Test1: Call Rest API for a Workflow Step
@@ -702,7 +640,7 @@ def tests():
     # Test 4: ???
     if t["test4"]: test4()
 
-    value = start_workflow("disease_associated_genes", "disease")
-    pprint(value)
+    start_workflow("wf2", "disease")
+
 
 tests()
