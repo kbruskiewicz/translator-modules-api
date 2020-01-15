@@ -5,7 +5,7 @@ from openapi_server.models.full_task_payload import FullTaskPayload  # noqa: E50
 from openapi_server.models.workflow_results import WorkflowResults  # noqa: E501
 from openapi_server import util
 
-import api_utils
+from openapi_server.api_utils import handle_run_workflow
 
 def run_workflow_by_payload(full_task_payload=None):  # noqa: E501
     """runs a workflow and returns its results (TODO or delays them?) based off a (TODO given sequence of) workflow names and their (TODO scatterable) inputs
@@ -17,7 +17,8 @@ def run_workflow_by_payload(full_task_payload=None):  # noqa: E501
 
     :rtype: WorkflowResults
     """
+
     if connexion.request.is_json:
         full_task_payload = FullTaskPayload.from_dict(connexion.request.get_json())  # noqa: E501
 
-    return api_utils.handle_run_workflow(full_task_payload), 200
+    return handle_run_workflow(full_task_payload)

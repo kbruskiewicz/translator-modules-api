@@ -1,9 +1,5 @@
-from typing import Dict
-
-import cwlgen
 from glob import glob
 from pprint import pprint
-
 
 import json
 import yaml
@@ -11,7 +7,6 @@ import uuid
 
 import os
 import subprocess
-
 
 DEBUG = True
 
@@ -42,10 +37,11 @@ service = {
     "host": "localhost:8080"
 }
 
-translator_modules_dir = "../../translator-modules/"
+translator_modules_dir = "/Users/kenneth/git/translator-modules-api/translator-modules/"  # must be absolute path
 inputs_dir = translator_modules_dir + "cwl/data/"
 workflows_dir = translator_modules_dir + "cwl/workflows/"
 implementations_dir = translator_modules_dir + "ncats/translator/modules/"
+
 
 def find_or_make_input():
     """
@@ -54,13 +50,14 @@ def find_or_make_input():
     """
     pass
 
+
 def make_input(raw_inputs, format="yaml"):
     """
     in: list of key-value pairs
     out: json file or yaml file, and file location
     """
 
-    file_name = uuid.uuid4()+"."+format
+    file_name = uuid.uuid4() + "." + format
     data = None
     if type(raw_inputs) is list:
         """
@@ -78,16 +75,17 @@ def make_input(raw_inputs, format="yaml"):
     file_location = inputs_dir + file_name
     with open(file_location, "x+") as inputs_file:
 
-        assert(type(data) is dict)
+        assert (type(data) is dict)
 
         if format is "yaml":
             yaml.dump(data, inputs_file)
-            assert(yaml.safe_load(inputs_file) == data)
+            assert (yaml.safe_load(inputs_file) == data)
         elif format is "json":
             json.dump(data, inputs_file)
-            assert(json.load(inputs_file) == data)
+            assert (json.load(inputs_file) == data)
 
         return inputs_file, file_location
+
 
 def validate_input():
     # TODO: validation criterion for inputs?
@@ -101,6 +99,7 @@ def validate_input():
     """
     pass
 
+
 def validate_input_against_schema(worklow_cwl_inst):
     """
     in: instance of a cwl workflow in memory (equivalent to type CommandLineTool e.g.)
@@ -113,26 +112,63 @@ def validate_input_against_schema(worklow_cwl_inst):
     """
     pass
 
-def handle_run_workflow(full_task_payload):
 
-    """
-    Failure cases:
-    - Syntactic
-        => not the right type => not str or list
-    - Semantic
-        => not a symbol inside the directory
-    """
+def handle_run_workflow(full_task_payload):
     name = full_task_payload.workflow_name
     input_name = full_task_payload.input_mappings
 
-    # TODO: Make asynchronous, robust to exceptions
-        # TODO: PRIORITY: Make robust to exceptions -> lookup the command and see what happens when error when posting stdout?
-    result_dict = start_workflow(name, input_name)
-    return result_dict
+    result_dict = start_workflow("disease_associated_genes", "disease")
+    pprint(result_dict)
+    status_code: int
+    if result_dict is not None:
+        status_code = 200
+    elif result_dict is None:
+        status_code = 500
+
+    # mimics output signature of an openapi controller call
+    # DONE: must adhere to the output shape of WorkflowResults
+    return translate_results_to_workflow_results(result_dict), status_code
 
 def handle_info_workflow(workflow_name):
     pass
 
+
+from openapi_server.models import WorkflowResults
+from openapi_server.models import TaskId
+import re
+
+def translate_results_to_workflow_results(results_dict):
+    """
+    Goal: convert the results from wes-client into a WorkflowResults object.
+
+    Example Input + Input Shape:
+    {'disease_list': {'basename': 'disease_associated_genes.records.json',
+                      'checksum': 'sha1$eaa1086aa296e369355577f7ecb06497001ac40e',
+                      'class': 'File',
+                      'location': 'file:///Users/kenneth/workflows/e89dc709536d4fc2b80b104462e1abb4/outdir/disease_associated_genes.records.json',
+                      'path': '/Users/kenneth/workflows/e89dc709536d4fc2b80b104462e1abb4/outdir/disease_associated_genes.records.json',
+                      'size': 6488}}
+    """
+    if results_dict:
+        results_body = results_dict[list(results_dict.keys())[0]]
+        results_path = results_body['path']
+        pprint(results_path)
+        # TODO: always assumes that the location is id-specific, is this true, or does it change with runner configuration?
+            # I don't want to have to deal with coupling with the config just to get the task-id
+            # How can I get the client to emit this information?
+        # TODO: is the task id returned by wes-client a uuid?
+        # TODO: capture the task_id of WorkflowResults as type TaskID?
+        # TODO: generalize the match!
+        # TODO: always assumes a succesful match!
+        match = re.search(r'\/workflows/(\w+)\/outdir\/', results_body['path'])
+        results_taskid = None
+        if match:
+            results_taskid = match.group(1)  # nota bene! the zeroth group is the total matching string, not the capture group
+
+        return WorkflowResults(task_id=results_taskid, results_path=results_path)
+    return "No Workflow Results"
+
+from openapi_server.models import FullTaskPayload
 def translate_payload(payload):
     """
     in: inputs -> inputs specification in python
@@ -144,12 +180,15 @@ def translate_payload(payload):
     """
     pass
 
+
 def resolve_resources():
     pass
+
 
 def run_input(payload):
     task_resources = translate_payload(payload)
     pass
+
 
 def run_workflow_int(int, payload):
     """
@@ -167,13 +206,16 @@ def run_workflow_int(int, payload):
     """
     pass
 
+
 def run_workflow_symbol(symbol, payload):
     pass
+
 
 def run_type_type_sub_symbol(inType, outType, symbol, payload):
     # scope is bounded by the API
     # Modify payload to be complete
     pass
+
 
 def locate_implementation(name, input_type="*", output_type="*", predicate=None):
     if input_type is locate_implementation.__defaults__[0]:
@@ -189,29 +231,46 @@ def locate_implementation(name, input_type="*", output_type="*", predicate=None)
 def locate_workflows(name, composite="*"):
     if composite is locate_implementation.__defaults__[0]:
         pass
-
     return glob(workflows_dir + composite + "/" + name + ".cwl")
+
 
 def locate_inputs(identifier, format="yaml"):
     return glob(inputs_dir + identifier + "." + format)
 
-from functools import reduce
-def make_command(workflow, implementation, inputs):
-    attachments_list = list(map(os.path.abspath, reduce(list.__add__, [implementation, workflow, inputs])))
-    attachments_str = ",".join(attachments_list)
-    wes_client_process_request = "wes-client --host={} --proto={} --attachments={} --run {} {}" \
-        .format(service["host"], service["proto"], attachments_str, os.path.abspath(workflow[0]), os.path.abspath(inputs[0]))
-    return wes_client_process_request
 
-def symbols_from_steps_of(workflow_location):
-    with open(os.path.abspath(workflow_location[0]), "r") as file:
-        # Can I find out if a workflow has steps?
-        wf_cwl = yaml.load(file)
-        if 'steps' in wf_cwl:
-            # If a workflow has steps, can I find out what symbols those steps are named for?
-            return list(wf_cwl["steps"].keys())
-        else:
-            return []
+from functools import reduce
+
+
+def make_command(workflow, implementation, inputs):
+    try:
+        assert len(workflow) > 0
+        assert len(implementation) > 0
+        assert len(inputs) > 0
+
+        attachments_list = list(map(os.path.abspath, reduce(list.__add__, [implementation, workflow, inputs])))
+        attachments_str = ",".join(attachments_list)
+        wes_client_process_request = "wes-client --host={} --proto={} --attachments={} --run {} {}" \
+            .format(service["host"], service["proto"], attachments_str, os.path.abspath(workflow[0]),
+                    os.path.abspath(inputs[0]))
+        return wes_client_process_request
+    except Exception:
+        return None
+
+
+def symbols_from_steps_of(workflow_location_list):
+    try:
+        assert len(workflow_location_list) > 0
+        with open(os.path.abspath(workflow_location_list[0]), "r") as file:
+            # Can I find out if a workflow has steps?
+            wf_cwl = yaml.load(file)
+            if 'steps' in wf_cwl:
+                # If a workflow has steps, can I find out what symbols those steps are named for?
+                return list(wf_cwl["steps"].keys())
+            else:
+                return []
+    except Exception:
+        return []
+
 
 def start_workflow_step(step_name, input_identifier):
     workflow_location = locate_workflows(step_name)
@@ -219,10 +278,14 @@ def start_workflow_step(step_name, input_identifier):
     input_location = locate_inputs(input_identifier)
     command_str = make_command(workflow_location, implementation_location, input_location)
 
-    result = subprocess.check_output(command_str, shell=True)
-    result_json = json.loads(result)
-    result_dict = dict(result_json)
-    return result_dict
+    try:
+        result = subprocess.check_output(command_str, shell=True)
+        result_json = json.loads(result)
+        result_dict = dict(result_json)
+        return result_dict
+    except Exception:
+        return None
+
 
 def start_workflow_composite(name, input_identifier):
     workflow_location = locate_workflows(name)
@@ -251,10 +314,14 @@ def start_workflow_composite(name, input_identifier):
 
     command_str = make_command(workflow_locations, implementation_locations, input_location)
 
-    result = subprocess.check_output(command_str, shell=True)
-    result_json = json.loads(result)
-    result_dict = dict(result_json)
-    return result_dict
+    try:
+        result = subprocess.check_output(command_str, shell=True)
+        result_json = json.loads(result)
+        result_dict = dict(result_json)
+        return result_dict
+    except Exception:
+        return None
+
 
 def start_workflow(name, input_identifier):
     workflow_location = locate_workflows(name)
@@ -264,6 +331,7 @@ def start_workflow(name, input_identifier):
         return start_workflow_composite(name, input_identifier)
     else:
         return start_workflow_step(name, input_identifier)
+
 
 def is_composite_workflow(spec_filename):
     """
@@ -280,23 +348,28 @@ def is_composite_workflow(spec_filename):
     # TODO: could I just check if the key exists or not rather than finding symbols length? would that be faster?
     return len(symbols_from_steps_of(spec_filename)) > 0
 
+
 def test1():
     name = "disease_associated_genes"
     input_name = "disease"
     pprint(start_workflow_step(name, input_name))
+
 
 def test2():
     name = "wf2"
     input_name = "disease"
     pprint(start_workflow_composite(name, input_name))
 
+
 import cwlgen
 import cwltool
+
 
 def access_cwl(cwl_path):
     assert True  # TODO guarantee it's a CWL file
     with open(cwl_path, "r") as cwl_file:
         return yaml.safe_load(cwl_file)
+
 
 def test3():
     """
@@ -505,6 +578,7 @@ def test3():
 
     # CASE: extracting inputs from a workflow to server as basis for schema check against inputs to be served
 
+
 def test31():
     """
     - Modifying a workflow specification to scatter on inputs
@@ -527,8 +601,8 @@ def test31():
 
     pass
 
-def make_cwl(step_list):
 
+def make_cwl(step_list):
     INPUT_TOKEN = "input_genes"  # how to make this derived?
     OUTPUT_TYPE = "File"
 
@@ -607,6 +681,7 @@ def make_cwl(step_list):
 
     return gen_dict
 
+
 def test4():
     """
     Representations of queries to the Workflow ARA
@@ -682,6 +757,7 @@ def test4():
     """
     pass
 
+
 t = {
     "test1": False,
     "test2": False,
@@ -689,6 +765,7 @@ t = {
     "test31": False,
     "test4": False
 }
+
 
 def tests():
     # Test1: Call Rest API for a Workflow Step
@@ -704,5 +781,11 @@ def tests():
 
     value = start_workflow("disease_associated_genes", "disease")
     pprint(value)
+
+    tp_test = FullTaskPayload("disease_associated_genes", "disease")
+    api_hook_result = handle_run_workflow(tp_test)
+    pprint(api_hook_result)
+
+
 
 tests()
