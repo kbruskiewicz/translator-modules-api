@@ -1,0 +1,3 @@
+[submodule "translator-modules"]
+	path = translator-modules
+	url = https://github.com/ncats/translator-modules.git
