@@ -37,8 +37,11 @@ service = {
     "host": "localhost:8080"
 }
 
-# TODO: generalise this Translator Modules configuration to get away from hard coding an absolute path
-translator_modules_dir = "/Users/kenneth/git/translator-modules-api/translator-modules/"  # must be absolute path
+# translator_modules_dir must be absolute path
+ctrl_path = os.path.abspath(__file__)
+ctrl_dir = os.path.dirname(ctrl_path)
+translator_modules_dir = os.path.abspath(ctrl_dir+"../../../translator-modules")
+
 inputs_dir = translator_modules_dir + "cwl/data/"
 workflows_dir = translator_modules_dir + "cwl/workflows/"
 implementations_dir = translator_modules_dir + "ncats/translator/modules/"
