@@ -1,4 +1,5 @@
 import logging
+logger = logging.getLogger(__name__).setLevel(logging.DEBUG)
 
 from glob import glob
 from pprint import pprint
@@ -11,9 +12,6 @@ import os
 import subprocess
 
 DEBUG = True
-
-
-logger = logging.getLogger(__name__).setLevel(logging.DEBUG)
 
 
 TYPES = ["gene", "chemical_substance", "disease", "anatomical_entity", "phenotypic_feature", "cell_line"]
