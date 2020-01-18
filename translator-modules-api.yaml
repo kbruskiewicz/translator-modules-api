@@ -29,7 +29,7 @@ paths:
       responses:
         '200':
           description: >-
-            The resopnse from the workflow runner (which if valid/200, are the location of the results or us returning the results)
+            The response from the workflow runner (which if valid/200, are the location of the results or us returning the results)
           content:
             application/json:
               schema:

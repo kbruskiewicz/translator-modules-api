@@ -173,7 +173,9 @@ def translate_results_to_workflow_results(results_dict):
         if match:
             results_taskid = match.group(1)  # nota bene! the zeroth group is the total matching string, not the capture group
 
-        return WorkflowResults(task_id=results_taskid, results_path=results_path)
+        result = WorkflowResults(task_id=results_taskid, results_path=results_path)
+        return json.dumps(result.to_dict())
+    
     return "No Workflow Results"
 
 from openapi_server.models import FullTaskPayload
@@ -789,12 +791,12 @@ def tests():
     # Test 4: ???
     if t["test4"]: test4()
 
-    value = start_workflow("disease_associated_genes", "disease")
-    pprint(value)
-
-    tp_test = FullTaskPayload("disease_associated_genes", "disease")
-    api_hook_result = handle_run_workflow(tp_test)
-    pprint(api_hook_result)
+    # value = start_workflow("disease_associated_genes", "disease")
+    # pprint(value)
+    #
+    # tp_test = FullTaskPayload("disease_associated_genes", "disease")
+    # api_hook_result = handle_run_workflow(tp_test)
+    # pprint(api_hook_result)
 
 
 
