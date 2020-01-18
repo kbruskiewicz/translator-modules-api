@@ -1,6 +1,7 @@
 # Local IDE and OS gitignores
 .idea/
 .DS_Store
+py3*/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
