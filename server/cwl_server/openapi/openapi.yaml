@@ -42,7 +42,7 @@ paths:
         inputs
       tags:
       - public
-      x-openapi-router-controller: openapi_server.controllers.public_controller
+      x-openapi-router-controller: cwl_server.controllers.public_controller
 components:
   schemas:
     TaskId:

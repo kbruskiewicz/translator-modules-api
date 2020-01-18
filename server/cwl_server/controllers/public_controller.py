@@ -1,11 +1,10 @@
 import connexion
 import six
+from cwl_server.controllers.controller_impl import handle_run_workflow
 
-from openapi_server.models.full_task_payload import FullTaskPayload  # noqa: E501
-from openapi_server.models.workflow_results import WorkflowResults  # noqa: E501
-from openapi_server import util
-
-from openapi_server.api_utils import handle_run_workflow
+from cwl_server.models.full_task_payload import FullTaskPayload  # noqa: E501
+from cwl_server.models.workflow_results import WorkflowResults  # noqa: E501
+from cwl_server import util
 
 
 def run_workflow_by_payload(full_task_payload=None):  # noqa: E501
@@ -18,8 +17,6 @@ def run_workflow_by_payload(full_task_payload=None):  # noqa: E501
 
     :rtype: WorkflowResults
     """
-
     if connexion.request.is_json:
         full_task_payload = FullTaskPayload.from_dict(connexion.request.get_json())  # noqa: E501
-
     return handle_run_workflow(full_task_payload)

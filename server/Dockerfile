@@ -9,8 +9,8 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 
 COPY . /usr/src/app
 
-EXPOSE 8080
+EXPOSE 8090
 
 ENTRYPOINT ["python3"]
 
-CMD ["-m", "openapi_server"]
+CMD ["-m", "cwl_server"]

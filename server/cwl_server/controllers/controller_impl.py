@@ -1,3 +1,5 @@
+import logging
+
 from glob import glob
 from pprint import pprint
 
@@ -9,6 +11,10 @@ import os
 import subprocess
 
 DEBUG = True
+
+
+logger = logging.getLogger(__name__).setLevel(logging.DEBUG)
+
 
 TYPES = ["gene", "chemical_substance", "disease", "anatomical_entity", "phenotypic_feature", "cell_line"]
 WORKFLOWS = ["wf2", "wf9"]  # how can I generate this dynamically?
@@ -40,7 +46,7 @@ service = {
 # translator_modules_dir must be absolute path
 ctrl_path = os.path.abspath(__file__)
 ctrl_dir = os.path.dirname(ctrl_path)
-translator_modules_dir = os.path.abspath(ctrl_dir+"../../../translator-modules")
+translator_modules_dir = os.path.abspath(ctrl_dir+"../../../../translator-modules")+"/"
 
 inputs_dir = translator_modules_dir + "cwl/data/"
 workflows_dir = translator_modules_dir + "cwl/workflows/"
@@ -272,7 +278,8 @@ def symbols_from_steps_of(workflow_location_list):
                 return list(wf_cwl["steps"].keys())
             else:
                 return []
-    except Exception:
+    except Exception as e:
+        logger.error(str(e))
         return []
 
 
@@ -287,7 +294,8 @@ def start_workflow_step(step_name, input_identifier):
         result_json = json.loads(result)
         result_dict = dict(result_json)
         return result_dict
-    except Exception:
+    except Exception as e:
+        logger.error(str(e))
         return None
 
 

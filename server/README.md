@@ -15,19 +15,19 @@ To run the server, please execute the following from the root directory:
 
 ```
 pip3 install -r requirements.txt
-python3 -m openapi_server
+python3 -m cwl_server
 ```
 
 and open your browser to here:
 
 ```
-http://localhost:8080/ui/
+http://localhost:8090/ui/
 ```
 
 Your OpenAPI definition lives here:
 
 ```
-http://localhost:8080/openapi.json
+http://localhost:8090/openapi.json
 ```
 
 To launch the integration tests, use tox:
@@ -42,8 +42,8 @@ To run the server on a Docker container, please execute the following from the r
 
 ```bash
 # building the image
-docker build -t openapi_server .
+docker build -t cwl_server .
 
 # starting up a container
-docker run -p 8080:8080 openapi_server
+docker run -p 8090:8090 cwl_server
 ```
