@@ -3,10 +3,11 @@
 import connexion
 
 from cwl_server import encoder
-
+from flask_cors import CORS
 
 def main():
     app = connexion.App(__name__, specification_dir='./openapi/')
+    CORS(app.app)
     app.app.json_encoder = encoder.JSONEncoder
     app.add_api('openapi.yaml',
                 arguments={'title': 'NCATS Workflow Runner'},
