@@ -122,20 +122,27 @@ def validate_input_against_schema(worklow_cwl_inst):
 
 
 def handle_run_workflow(full_task_payload):
-    name = full_task_payload.workflow_name
-    input_name = full_task_payload.input_mappings
+    workflow_name = full_task_payload.workflow_name
+    workflow_inputs = full_task_payload.input_mappings
+    try:
+        result_dict = start_workflow(workflow_name,workflow_inputs)
+        
+        pprint(result_dict)
+        status_code: int
+        
+        if result_dict is not None:
+            return translate_results_to_workflow_results(result_dict), 200
+            
+        else:
+            return "No Workflow Results", 400
+            
+    except Exception as e:
+        logging.error(
+            "handle_run_workflow() Error: for workflow name '%s' with input mapping '%s': %s"
+            %  (workflow_name, workflow_inputs, str(e))
+        )
+        return str(e), 500
 
-    result_dict = start_workflow("disease_associated_genes", "disease")
-    pprint(result_dict)
-    status_code: int
-    if result_dict is not None:
-        status_code = 200
-    elif result_dict is None:
-        status_code = 500
-
-    # mimics output signature of an openapi controller call
-    # DONE: must adhere to the output shape of WorkflowResults
-    return translate_results_to_workflow_results(result_dict), status_code
 
 def handle_info_workflow(workflow_name):
     pass
@@ -176,7 +183,7 @@ def translate_results_to_workflow_results(results_dict):
         result = WorkflowResults(task_id=results_taskid, results_path=results_path)
         return json.dumps(result.to_dict())
     
-    return "No Workflow Results"
+    return ""
 
 from openapi_server.models import FullTaskPayload
 def translate_payload(payload):
@@ -336,7 +343,11 @@ def start_workflow_composite(name, input_identifier):
 
 
 def start_workflow(name, input_identifier):
+
     workflow_location = locate_workflows(name)
+    if not workflow_location:
+        raise RuntimeWarning("Unknown workflow '%s'" % name)
+    
     symbols = symbols_from_steps_of(workflow_location)
     if len(symbols) > 0:
         # TODO: optimize the subsequent calls on `symbol`

@@ -6,3 +6,4 @@ wes-service
 cwltool
 cwlgen
 cwlref-runner
+flask-cors
