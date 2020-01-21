@@ -9,13 +9,19 @@ import uuid
 
 import os
 import subprocess
+import re
+
+from functools import reduce
+
+from openapi_server.models import WorkflowResults
+
 
 DEBUG = True
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 TYPES = ["gene", "chemical_substance", "disease", "anatomical_entity", "phenotypic_feature", "cell_line"]
-WORKFLOWS = ["wf2", "wf9"]  # how can I generate this dynamically?
+WORKFLOWS = ["wf2", "wf2_rl", "wf9", "wf9_rl"]  # how can I generate this dynamically?
 
 """
 single input || multi input -> input map? kwargs of lists of values
@@ -122,10 +128,12 @@ def validate_input_against_schema(worklow_cwl_inst):
 
 
 def handle_run_workflow(full_task_payload):
+
     workflow_name = full_task_payload.workflow_name
     workflow_inputs = full_task_payload.input_mappings
+
     try:
-        result_dict = start_workflow(workflow_name,workflow_inputs)
+        result_dict = start_workflow(workflow_name, workflow_inputs)
         
         pprint(result_dict)
         status_code: int
@@ -147,10 +155,6 @@ def handle_run_workflow(full_task_payload):
 def handle_info_workflow(workflow_name):
     pass
 
-
-from openapi_server.models import WorkflowResults
-from openapi_server.models import TaskId
-import re
 
 def translate_results_to_workflow_results(results_dict):
     """
@@ -185,7 +189,7 @@ def translate_results_to_workflow_results(results_dict):
     
     return ""
 
-from openapi_server.models import FullTaskPayload
+
 def translate_payload(payload):
     """
     in: inputs -> inputs specification in python
@@ -245,17 +249,14 @@ def locate_implementation(name, input_type="*", output_type="*", predicate=None)
     return glob(implementations_dir + input_type + "/" + output_type + "/" + name + ".py")
 
 
-def locate_workflows(name, composite="*"):
+def locate_workflows(name, composite="**"):
     if composite is locate_implementation.__defaults__[0]:
         pass
-    return glob(workflows_dir + composite + "/" + name + ".cwl")
+    return glob(workflows_dir + composite + "/" + name + ".cwl",recursive=True)
 
 
 def locate_inputs(identifier, format="yaml"):
     return glob(inputs_dir + identifier + "." + format)
-
-
-from functools import reduce
 
 
 def make_command(workflow, implementation, inputs):
@@ -290,10 +291,9 @@ def symbols_from_steps_of(workflow_location_list):
         return []
 
 
-def start_workflow_step(step_name, input_identifier):
-    workflow_location = locate_workflows(step_name)
+def start_workflow_step(step_name, workflow_location, input_location):
+
     implementation_location = locate_implementation(step_name)
-    input_location = locate_inputs(input_identifier)
     command_str = make_command(workflow_location, implementation_location, input_location)
 
     try:
@@ -306,22 +306,21 @@ def start_workflow_step(step_name, input_identifier):
         return None
 
 
-def start_workflow_composite(name, input_identifier):
-    workflow_location = locate_workflows(name)
-    workflow_locations = workflow_location + []
+def start_workflow_composite(name, workflow_location, input_location, symbols):
 
-    input_location = locate_inputs(input_identifier)
-    symbols = symbols_from_steps_of(workflow_location)
+    workflow_locations = workflow_location + []
 
     if name in WORKFLOWS:
         workflow_dir = "/".join(workflow_location[0].split("/")[0:-1]) + "/"
         workflow_dir_abs = os.path.abspath(workflow_dir)
+        # TODO: check the os.walk() expectations for the nature of its input (warning noted in PyCharms)
         for root, dirs, files in os.walk(workflow_dir_abs, topdown=False):
             for filename in files:
                 symbols += [filename.split(".cwl")[0]]
                 workflow_locations += [root + "/" + filename]
     else:
-        # If I can find out what symbols those steps have, can I see if they have equivalent workflows and implementations?
+        # If I can find out what symbols those steps have,
+        # can I see if they have equivalent workflows and implementations?
         for symbol in symbols:
             maybe_workflow_location = locate_workflows(symbol)
             if len(maybe_workflow_location) > 0:
@@ -338,6 +337,7 @@ def start_workflow_composite(name, input_identifier):
         result_json = json.loads(result)
         result_dict = dict(result_json)
         return result_dict
+
     except Exception:
         return None
 
@@ -349,11 +349,13 @@ def start_workflow(name, input_identifier):
         raise RuntimeWarning("Unknown workflow '%s'" % name)
     
     symbols = symbols_from_steps_of(workflow_location)
+    input_location = locate_inputs(input_identifier)
+
     if len(symbols) > 0:
         # TODO: optimize the subsequent calls on `symbol`
-        return start_workflow_composite(name, input_identifier)
+        return start_workflow_composite(name, workflow_location, input_location, symbols)
     else:
-        return start_workflow_step(name, input_identifier)
+        return start_workflow_step(name, workflow_location, input_location)
 
 
 def is_composite_workflow(spec_filename):
@@ -373,19 +375,24 @@ def is_composite_workflow(spec_filename):
 
 
 def test1():
-    name = "disease_associated_genes"
+    step_name = "disease_associated_genes"
     input_name = "disease"
-    pprint(start_workflow_step(name, input_name))
+
+    workflow_location = locate_workflows(step_name)
+    input_location = locate_inputs(input_name)
+
+    pprint(start_workflow_step(step_name, workflow_location, input_location))
 
 
 def test2():
     name = "wf2"
     input_name = "disease"
-    pprint(start_workflow_composite(name, input_name))
 
+    workflow_location = locate_workflows(name)
+    symbols = symbols_from_steps_of(workflow_location)
+    input_location = locate_inputs(input_name)
 
-import cwlgen
-import cwltool
+    pprint(start_workflow_composite(name, workflow_location, input_location, symbols))
 
 
 def access_cwl(cwl_path):

@@ -19,4 +19,5 @@ def run_workflow_by_payload(full_task_payload=None):  # noqa: E501
     """
     if connexion.request.is_json:
         full_task_payload = FullTaskPayload.from_dict(connexion.request.get_json())  # noqa: E501
+
     return handle_run_workflow(full_task_payload)

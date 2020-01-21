@@ -143,8 +143,9 @@ First, the code stubs must be reconnected to the (delegated) business logic to t
 required to get the system working again.  Developers can scrutinize recent working releases of the code to 
 best understand how the code stubs need to be reconnected or how to add new business logic.
 
-Also, the *server* and *client* subdirectory `README.md`,  `__main__.py` and `requirements.txt`  files are overwritten 
-by the code generation. These should be restored from the \*-master.\* versions of these files in each directory.
+Also, the *server* and *client* subdirectory `README.md`, `setup.py`, `__main__.py` and `requirements.txt` files are 
+overwritten by the code generation. These should be restored from the \*-master.\* versions of these files in 
+each directory.
  
 Finally, check if the `server/cwl_server/__main__.py` file has the correct Identifiers server port (8090).
 
