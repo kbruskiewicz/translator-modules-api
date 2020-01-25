@@ -80,15 +80,16 @@ Developer mode may be necessary to run various debugging processes within Python
 
 ## Wes-Server
 
-Open up a command line terminal and start the CWL `wes-server` (installed as a dependency) as follows:
+The CWL Server API calls a 3rd party CWL runner called `wes-server`. Before firing up the server API itself, open up a 
+command line terminal and start the  `wes-server` application (installed as a dependency above) as follows:
 
 ```bash
 wes-server
 ```
 
-## Server API
+## CWL Server API
 
-Follow the directives in the [server configuration and startup](./server/README.md) to run the server.
+Follow the directives in the [server configuration and startup](./server/README.md) to run the CWL API server itself.
 
 # (Re-)Generating the Server and Client
 
