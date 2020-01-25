@@ -45,9 +45,21 @@ Some IDE's (e.g. PyCharm) may also have provisions for directly creating such a 
 
 ## Installation of Dependencies and Make Modules Visible as Command Line Programs
 
-Make sure that your pip version is 3.7 compliant. 
- 
-The CWL server is the component you will run.  To installed dependencies, you'll need to first enter the  *server*
+Make sure that your pip version is 3.7 compliant (within your `venv`).
+
+First, install the dependencies for the translator project:
+
+```bash
+cd translator-modules
+
+# sometimes better to use the 'python -m pip' version of pip rather than just 'pip'
+# to ensure that the proper Python3.7 version of pip is used...
+python -m pip install -r requirements.txt -e .
+```
+
+Note the use of the `-e` flag to keep changes to the module up-to-date.
+
+The CWL server is the component that is run.  To installed dependencies specifically for that, first enter the *server* 
 subdirectory (from the root *translator-modules-api* project directory) then run the `pip` command:
 
 ```bash
@@ -55,7 +67,7 @@ cd server
 
 # sometimes better to use the 'python -m pip' version of pip rather than just 'pip'
 # to ensure that the proper Python3.7 version of pip is used...
-python -m pip install -r requirements.txt .
+python -m pip install -r requirements.txt -e .
 ```
 
 This also has the side effect of ensuring that the software is visible for execution as standalone programs using
