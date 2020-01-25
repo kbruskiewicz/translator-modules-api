@@ -74,13 +74,6 @@ This also has the side effect of ensuring that the software is visible for execu
 the bare module names (without the **.py** file extension; Note that you may have to rerun this command for every new
 terminal session on your operating system)
 
-To install the package in "developer" mode (such that code changes are automatically reflected in the local library), 
-include the `-e` flag with the `pip` command, namely:
-
-```
-python -m pip install -r requirements.txt -e .
-```
-
 Developer mode may be necessary to run various debugging processes within Python IDE's such as PyCharms.
 
 # Running the System
