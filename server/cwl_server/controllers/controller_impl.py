@@ -13,7 +13,7 @@ import re
 
 from functools import reduce
 
-from openapi_server.models import WorkflowResults
+from cwl_server.models import WorkflowResults
 
 
 DEBUG = True
