@@ -80,7 +80,15 @@ Developer mode may be necessary to run various debugging processes within Python
 
 ## Wes-Server
 
-Open up a terminal 
+Open up a command line terminal and start the CWL `wes-server` (installed as a dependency) as follows:
+
+```bash
+wes-server
+```
+
+## Server API
+
+Follow the directives in the [server configuration and startup](./server/README.md) to run the server.
 
 # (Re-)Generating the Server and Client
 
